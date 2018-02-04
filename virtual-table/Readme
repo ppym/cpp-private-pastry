@@ -1,0 +1,2 @@
+
+g++ -fdump-class-hierarchy ./vir-tbl1.cpp
