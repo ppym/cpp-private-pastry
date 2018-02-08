@@ -5,7 +5,7 @@ for i in $files; do
 	then 
 		continue
 	fi
-	if [ $i == "./run.sh" ]
+	if [ ${i##*.} == "sh" ]
 	then 
 		continue
 	fi
