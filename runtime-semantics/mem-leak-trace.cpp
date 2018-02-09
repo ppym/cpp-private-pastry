@@ -4,6 +4,8 @@
 #include <string>  
 #include <string.h>  
 #include <vector>  
+#include <pthread.h>
+#include <unistd.h>
 using namespace std;  
   
 class Tracer  
@@ -41,6 +43,8 @@ private:
         Tracer & _tracer;  
     };  
   
+  
+  
 public:  
     Tracer ();  
     ~Tracer ();  
@@ -49,32 +53,44 @@ public:
     void Dump ();  
   
     static bool Ready;  
+    static bool map_add; //avoid infinite recursive..cause map add will new a map entry
   
 private:  
-    void lock () { _lockCount++; }  
-    void unlock () { _lockCount--; }  
+    void lock () { pthread_mutex_lock(&mutex); }  
+    void unlock () { pthread_mutex_unlock(&mutex); }  
   
 private:  
     typedef std::map<void *, Entry>::iterator iterator;  
     std::map<void *, Entry> _map;  
-    int _lockCount;  
+    int _lockCount;
+    pthread_mutex_t mutex;
 };  
   
 bool Tracer::Ready = false;  
+bool Tracer::map_add = false;
   
 Tracer::Tracer():_lockCount(0)  
 {  
-        Ready = true;  
+	Ready = true;  
+	map_add = false;
+
+	pthread_mutexattr_t Attr;
+	pthread_mutexattr_init(&Attr);
+	pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&mutex, &Attr);
 }  
   
 Tracer::~Tracer()  
 {  
         Ready = false;  
         Dump();  
+	cout << "Tracer::~Tracer" << endl;
 }  
   
 void Tracer::Dump()  
 {  
+        cout << "Dump _map.size()=" << _map.size() << endl;  
+#if 0
         if (_map.size() != 0)  
         {  
                 cout << _map.size() << " memory leaks detected" << endl;  
@@ -85,40 +101,42 @@ void Tracer::Dump()
                         cout << file << ", " << line << endl;  
                 }  
         }  
+#endif
 }  
   
 void Tracer::Add(void *p, const char *file, int line)  
 {  
-        if (_lockCount > 0)  
-                return;  
         Tracer::Lock lock(*this);  
+	map_add = true;
         _map[p] = Entry(file, line);  
+	map_add = false;
 }  
-  
+ 
 void Tracer::Remove(void *p)  
 {  
-        if (_lockCount > 0)  
-                return;  
-  
         Tracer::Lock lock(*this);  
   
         iterator itor = _map.find(p);  
-        if (itor != _map.end())  
+        if (itor != _map.end())  {
                 _map.erase(itor);  
+	}
 }  
   
 /*extern*/ Tracer gNewTracer;  
   
 void* operator new (size_t size, const char* file, int line)  
 {  
+	//cout << "operator new (size_t size, const char* file, int line)" << endl;
         void* p = malloc(size);  
         if (Tracer::Ready)  
                 gNewTracer.Add(p, file, line);  
+	//cout << "operator new (size_t, const char*, int)=" <<size << " p=" << (long*)p << endl;
         return p;  
 }  
   
 void operator delete(void* p, const char* file, int line)  
 {  
+	//cout << "operator delete(void*, const char*, int)=" << (long*)p << endl;
         if (Tracer::Ready)  
                 gNewTracer.Remove(p);  
         free(p);  
@@ -126,14 +144,17 @@ void operator delete(void* p, const char* file, int line)
   
 void* operator new (size_t size)  
 {  
+	//cout << "operator new (size_t )=" << size << endl;
         void* p = malloc(size);  
-        if (Tracer::Ready)  
+        if (Tracer::Ready && Tracer::map_add == false)  
                 gNewTracer.Add(p, "?", 0);  
+	//cout << "operator new (size_t )=" << size <<" p=" << (long*)p << endl;
         return p;  
 }  
   
 void operator delete(void* p)  
 {  
+	//cout << "operator delete(void*)=" << (long*)p<< endl;
         if (Tracer::Ready)  
                 gNewTracer.Remove(p);  
         free(p);  
@@ -144,14 +165,15 @@ void* operator new [](size_t size, const char* file, int line)
         void* p = malloc(size);  
         if (Tracer::Ready)  
                 gNewTracer.Add(p, file, line);  
+	cout << "operator new [](size_t, const char*, int)=" << size << " p= " << (long*)p <<  endl;
         return p;  
 }  
   
 void operator delete[](void* p, const char* file, int line)  
 {  
+	cout << "operator delete[](void*, const char*, int)=" <<(long*)p << endl;
         if (Tracer::Ready)  
                 gNewTracer.Remove(p);  
-        cout <<"delete[](void* p, const char* file, int line)" <<endl;  
         free(p);  
 }  
   
@@ -160,28 +182,58 @@ void* operator new[] (size_t size)
         void* p = malloc(size);  
         if (Tracer::Ready)  
                 gNewTracer.Add(p, "?", 0);  
+	cout << "operator new[] (size_t)=" << size << " p=" << (long*)p << endl;
         return p;  
 }  
   
 void operator delete[](void* p)  
 {  
+        //cout << "delete[](void* )=" << (long*)p <<endl;  
         if (Tracer::Ready)  
                 gNewTracer.Remove(p);  
-        cout << "delete[](void* p)"<<endl;  
         free(p);  
 }  
   
 #define new new(__FILE__, __LINE__)  
-
+  
 class X {
 private:
 	long mi[1000];
 };
- 
-int main()  
+
+pthread_t pid1;
+pthread_t pid2;
+
+void *thread1(void* argv)
+{
+	cout << "thread1\n";
+	int i=0;
+	while(i<10000000) {
+		int *a = new int(3);
+		a = a;
+		i++;
+	}
+	return 0;
+}
+
+void *thread2(void* argv)
+{
+	cout << "thread2\n";
+	int i=0;
+	while(i<10000000) {
+		int *a = new int(4);
+		a = a;
+		i++;
+	}
+	return 0;
+}
+
+int main(int argc, char *argv[])  
 {  
-        int * a = new int(3);  
-        int * b = new int[3];  
-	X *x = new X();
+	pthread_create(&pid1, NULL, thread1, NULL) ;
+	pthread_create(&pid2, NULL, thread2, NULL) ;
+
+	pthread_join(pid1, NULL);
+	pthread_join(pid2, NULL);
         return 0;  
-}  
+} 
