@@ -83,6 +83,6 @@ int main()
 	delete px2;
 	delete px3; //crash since we use stack memory
 
-	int *pi = new int(5);
+	int *pi = new int(7);
 	delete pi;
 }
