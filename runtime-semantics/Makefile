@@ -13,5 +13,11 @@ all:$(TARGETS)
 ./operator-new:./operator-new.cpp
 	g++ -o $@ -Wall $< 
 
+./operator-new-debug:./operator-new-debug.cpp
+	g++ -o $@ -Wall $< 
+
+./mem-leak-trace:./mem-leak-trace.cpp
+	g++ -o $@ -Wall $< -g
+
 clean:
 	rm -rf ./$(TARGETS)
