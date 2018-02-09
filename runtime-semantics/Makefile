@@ -17,7 +17,7 @@ all:$(TARGETS)
 	g++ -o $@ -Wall $< 
 
 ./mem-leak-trace:./mem-leak-trace.cpp
-	g++ -o $@ -Wall $< -g
+	g++ -o $@ -Wall $< -g -pthread
 
 clean:
 	rm -rf ./$(TARGETS)
