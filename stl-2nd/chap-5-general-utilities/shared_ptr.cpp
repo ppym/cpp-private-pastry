@@ -6,14 +6,14 @@
 
 using namespace std;
 
-class SimpleDeleter {
+template <typename T>
+class Deleter {
 public:
-	void operator ()(int *p) { 
-		cout << "SimpleDeleter p=" << (long*)p << endl;
+	void operator ()(T *p) { 
+		cout << "Deleter p=" << (long*)p << endl;
 		delete p;
 	}
 };
-
 
 class FileDeleter {
 public:
@@ -28,6 +28,24 @@ public:
 private:
 	std::string filename;
 };
+
+class FileClass {
+public:
+	FileClass(const std::string& fn) :
+		filename(fn), 
+		ofstr(std::ofstream(fn)) {}
+
+	virtual ~FileClass() {
+		cout << "~FileClass" << endl;
+		ofstr.close();
+		std::remove(filename.c_str());		
+	}
+
+private:
+	std::string filename;
+	std::ofstream ofstr;
+};
+
 int main()
 {
 	std::shared_ptr<std::string> pA(new std::string("aaaa"));
@@ -49,9 +67,10 @@ int main()
 	cout << "after push vecP:" << pA.use_count() << endl;
 
 	{ 
-		std::shared_ptr<int> p(new int(2), SimpleDeleter());
+		std::shared_ptr<int> p(new int(2), Deleter<int>());
 		cout << *p << endl;
 		std::shared_ptr<int> p_l(new int(3), [](void *p){ cout << "lambda deleter p=" << (long*)p << endl;});
+		std::shared_ptr<double> p_d(new double(2), Deleter<double>());
 	}
 
 	{
@@ -59,5 +78,9 @@ int main()
 		std::shared_ptr<std::ofstream> fp(new std::ofstream("./tmpfile.txt"), FileDeleter("./tmpfile.txt"));
 		//make_shared can't be used with custom deleter
 		//std::shared_ptr<std::ofstream> fp = make_shared(new std::ofstream("./tmpfile.txt"), FileDeleter("./tmpfile.txt")); 
+	}
+	
+	{
+		std::shared_ptr<FileClass> pFC(new FileClass("./tmpFileClass.txt"));
 	}
 }
