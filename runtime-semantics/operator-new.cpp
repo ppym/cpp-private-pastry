@@ -56,6 +56,14 @@ void *operator new(size_t size)
 	return malloc(size); //call origin operator new
 }
 
+struct Base {
+int j; 
+virtual void f(){cout << "Base::f()\n";}
+};
+struct Derived : public Base {
+void f() {cout << "Derived::f()\n";}
+};
+
 int main()
 {
 	X* px1 = new X();
@@ -81,8 +89,14 @@ int main()
 	//2.call the operator delete
 	delete px1;
 	delete px2;
-	delete px3; //crash since we use stack memory
+//	delete px3; //crash since we use stack memory
 
 	int *pi = new int(7);
 	delete pi;
+
+	Base b;
+	b.f();
+	b.~Base();
+	new (&b) Derived;
+	b.f();
 }
