@@ -2,6 +2,8 @@
 #include <iterator>
 #include <cmath>
 #include <array>
+#include "../../common/timer.h"
+
 using namespace std;
 
 #define CR std::cout << std::endl;
@@ -10,6 +12,12 @@ void printContainer(C c)
 {
 	copy(c.begin(), c.end(), std::ostream_iterator<int>(std::cout, " ")); 
 	CR;
+}
+
+void RadixSortBase(int *A, int *B, int N, int base)
+{
+	int *C = new int[N];
+	delete C;
 }
 
 void RadixSort(int *A, int *B, int N, int K)
@@ -24,7 +32,8 @@ void RadixSort(int *A, int *B, int N, int K)
 
 	int base;
 	int *from, *to;
-	for (base=1; base<max_base; base++) {
+	for (base=1; base<=max_base; base++) {
+		cout << "base =     " << base << endl;
 		for (int i=0; i<10; i++) dec[i] = 0;
 
 		int base_cnt = pow(10, base-1);
@@ -55,7 +64,8 @@ void RadixSort(int *A, int *B, int N, int K)
 
 int main()
 {
-	int *A, *B, N=100, K=10000;
+	Timer timer;
+	int *A, *B, N=100, K=10;
 	A = new int[N];
 	B = new int[N];
 
@@ -64,11 +74,14 @@ int main()
 		A[i] = rand()%K +1;
 	
 	copy(A, A+N, ostream_iterator<int>(cout, " ")); CR;
+	timer.Start();
 	RadixSort(A, B, N, K);
+	timer.Stop();
+	cout << "timer cost " << timer.GetElapsedMillseconds() << "ms" << endl;
 	copy(B, B+N, ostream_iterator<int>(cout, " ")); CR;
 	for (int i=N-1; i>0; i--){
 		if (B[i] < B[i-1]) {
-			cerr << "error result at[" << i << "]" << endl;
+			cerr << "error result at[" << i << "] "  << B[i] << " " << B[i-1] << endl;
 		}
 	}
 	delete A;
