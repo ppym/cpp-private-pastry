@@ -31,7 +31,7 @@ void initRouteMap(Node **root, int *end)
 	nodes[2].AddNext(&nodes[3]);
 	nodes[2].AddNext(&nodes[5]);
 
-	//nodes[3].AddNext(&nodes[0]);
+	nodes[3].AddNext(&nodes[0]);
 
 	nodes[5].AddNext(&nodes[4]);
 	*end = 4;
@@ -58,8 +58,19 @@ void printRoute(std::deque<Node *> &queue)
 	std::cout << "\n";
 }
 
+bool isLoopQueue(std::deque<Node*> &queue, Node *node)
+{
+	for (std::deque<Node *>::iterator it = queue.begin(); it != queue.end(); it++)
+		if(*it == node)
+			return true;
+	return false;
+}
+
 void BFS(std::deque<Node*> &queue, Node *node, int end)
 {
+	if (isLoopQueue(queue, node)) 
+		return;
+
 	queue.push_back(node);
 	for (auto subNode : node->next) {
 		if (subNode->point == end) {
@@ -80,7 +91,7 @@ int main()
 	Node *root;
 	int end;
 	initRouteMap(&root, &end);
-	printRouteMap(root);
+//	printRouteMap(root);
 	std::deque<Node *> queue;
 	BFS(queue, root, end);
 }

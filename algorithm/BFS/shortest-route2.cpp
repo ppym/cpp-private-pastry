@@ -37,6 +37,7 @@ void initRouteMap(Node **root, std::string *end)
 	nodes[3].AddNext(&nodes[4]);
 
 	nodes[5].AddNext(&nodes[4]);
+	nodes[5].AddNext(&nodes[1]);
 	*end = "BAT";
 }
 
@@ -61,8 +62,19 @@ void printRoute(std::deque<Node *> &queue)
 	std::cout << "\n";
 }
 
+bool isLoopQueue(std::deque<Node*> &queue, Node *node)
+{
+	for (std::deque<Node *>::iterator it = queue.begin(); it != queue.end(); it++)
+		if(*it == node)
+			return true;
+	return false;
+}
+
 void BFS(std::deque<Node*> &queue, Node *node, std::string end)
 {
+	if (isLoopQueue(queue, node)) 
+		return;
+
 	queue.push_back(node);
 	for (auto subNode : node->next) {
 		if (subNode->name == end) {
@@ -83,7 +95,7 @@ int main()
 	Node *root;
 	std::string end;
 	initRouteMap(&root, &end);
-	printRouteMap(root);
+//	printRouteMap(root);
 	std::deque<Node *> queue;
 	BFS(queue, root, end);
 }
