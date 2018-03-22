@@ -10,3 +10,6 @@ clean:
 ./knapsack1:./knapsack1.cpp
 	g++ -std=c++11 -o $@ -Wall $< 
 
+./knapsack2:./knapsack2.cpp
+	g++ -std=c++11 -o $@ -Wall $< 
+

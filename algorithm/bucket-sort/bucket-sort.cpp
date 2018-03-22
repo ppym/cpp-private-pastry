@@ -37,13 +37,5 @@ int main(int argc, char *argv[])
 	timer.Stop();
 	cout << "cost time " << timer.GetElapsedMillseconds() << "ms" << endl;
 	cout << "cost zone " << bucket.size()* << endl;
-
-#if 0
-	for (auto &s : bucket) {
-		for (auto &i : s) 
-			cout << i << " ";
-	}
-	cout << endl;
-#endif
 }
 

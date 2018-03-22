@@ -65,7 +65,7 @@ void RadixSort(int *A, int *B, int N, int K)
 int main()
 {
 	Timer timer;
-	int *A, *B, N=100, K=10;
+	int *A, *B, N=100000, K=1000;
 	A = new int[N];
 	B = new int[N];
 
