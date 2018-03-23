@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+#include <deque>
 
 struct TreeNode {
 	int data;
@@ -20,9 +22,11 @@ struct BinaryTree {
 	void remove(int data);
 	void InOrder(TreeNode*node);
 	void BinaryPrint();
+	void printTree();
 	void releaseNode(TreeNode *node);
 	void calcDepth();
 	int calcDepth(TreeNode *node);
+	TreeNode *del(TreeNode *node);
 };
 
 void BinaryTree::calcDepth()
@@ -47,10 +51,69 @@ int BinaryTree::calcDepth(TreeNode *root)
 		return depth_r+1;
 }
 
+void BinaryTree::printTree()
+{
+	if (!root) {
+		std::cout << "Tree empty " << std::endl;
+		return;
+	}
+#if 0 //wrong 
+	if (depth == 0) {
+		std::cout << root->data << std::endl;
+		return;
+	}
+
+	int len = 3*pow(2,depth-1) + pow(2,depth-1) - 1;
+	int suffix, gap, count;
+	TreeNode *node = root;
+	for (int i=0; i<depth; i++) {
+		count = pow(2,i);
+		gap = len/count;
+		suffix = gap>>1;
+
+		for (int j=0; j<suffix; j++)
+			std::cout << " ";
+
+		for (j=0; j<count; j++) {
+		}
+
+		for (int j=0; j<suffix; j++)
+			std::cout << " ";
+		std::cout << std::endl;
+	}
+#endif
+	std::deque<TreeNode*> list;
+	list.push_back(root);
+	TreeNode *curr;
+
+	while(!list.empty()) {
+		curr = list.front();
+		list.pop_front();
+		if (curr)
+			std::cout << curr->data << " ";
+		else {
+			std::cout << "#" << " ";
+			continue;
+		}
+		
+		if (curr->pLeft) 
+			list.push_back(curr->pLeft);
+		else 
+			list.push_back(0);
+
+		if (curr->pRight) 
+			list.push_back(curr->pRight);
+		else
+			list.push_back(0);
+	}
+	std::cout << std::endl;
+
+}
+
 void BinaryTree::releaseNode(TreeNode *node)
 {
 	if (node) {
-		std::cout << "delete " << (long*)node << std::endl;
+		//std::cout << "delete " << (long*)node << std::endl;
 		TreeNode *l = node->pLeft;
 		TreeNode *r = node->pRight;
 		delete node;
@@ -97,6 +160,42 @@ void BinaryTree::add(int data)
 	calcDepth();
 }
 
+TreeNode *BinaryTree::del(TreeNode *node)
+{
+	TreeNode *ret = NULL;
+	if (!node->pLeft && !node->pRight) {
+		delete node;
+	}
+	else if (!node->pLeft && node->pRight) {
+		ret = node->pRight;
+		delete node;
+	}
+	else if (!node->pRight && node->pLeft) {
+		ret = node->pLeft;
+		delete node;
+	}
+	else {
+		//find min data in node's Right subtree
+		TreeNode *min = node->pRight;
+		TreeNode *pre = node;
+		while(min->pLeft) {
+			pre = min;
+			min = min->pLeft;
+		}
+		node->data = min->data;
+		if (pre != node) {
+			pre->pLeft = min->pRight;
+		}
+		else {
+			pre->pRight = min->pRight;
+		}
+		delete min;
+		ret = node;
+	}
+
+	return ret;
+}
+
 void BinaryTree::remove(int data)
 {
 	if (!root)
@@ -119,50 +218,18 @@ void BinaryTree::remove(int data)
 		}
 	}
 
-	if (!node_parent) {
-		root = NULL;
-		delete node;
+	if (!node) return;
+
+	if (!node_parent) { //root节点
+		root = del(root);
 		return;
 	}
-	
-	if (node) {
-		if (node->pLeft == NULL && node->pRight == NULL) {	
-			if (isLeftTree) 
-				node_parent->pLeft = node->pLeft;
-			else 
-				node_parent->pRight = node->pLeft;
-			delete node;
-		}
-		else if (node->pLeft != NULL && node->pRight == NULL) {
-			if (isLeftTree) 
-				node_parent->pLeft = node->pLeft;
-			else 
-				node_parent->pRight = node->pLeft;
-			delete node;
-		}
-		else if (node->pRight != NULL && node->pLeft == NULL) {
-			if (node == root) {
-				root = node->pRight;
-			}
-			else {
-			if (isLeftTree)
-				node_parent->pLeft = node->pRight;
-			else
-				node_parent->pRight = node->pRight;
-			}
-			delete node;
-		}
-		else {
-			TreeNode *min, *pre;
-			min = node->pRight;
-			pre = node;
-			while (min->pLeft) {
-				pre = min;
-				min = min->pLeft;
-			}
-			node->data = min->data;
-			(pre == node) ? (node->pRight) : (pre->pLeft) = min->pRight;
-		}
+
+	if (isLeftTree) {
+		node_parent->pLeft = del(node);
+	}
+	else {
+		node_parent->pRight = del(node);
 	}
 }
 
@@ -201,14 +268,15 @@ int main()
 	tree.add(22);
 	tree.add(33);
 	
-	tree.BinaryPrint();
+	//tree.BinaryPrint();
 
 	std::cout << "remove root" << std::endl;
 	tree.remove(20);
-	tree.BinaryPrint();
+	//tree.BinaryPrint();
 
 	std::cout << "remove normal" << std::endl;
 	tree.remove(15);
 	tree.BinaryPrint();
+	tree.printTree();
 }
 
